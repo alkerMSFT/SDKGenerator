@@ -236,7 +236,8 @@ function getPropertyCsType(property, datatype, needOptional) {
 }
 
 function getAuthParams(apiCall, isInstance = false) {
-    if (apiCall.url === "/Authentication/GetEntityToken")
+    if (apiCall.url === "/Authentication/GetEntityToken"
+        || apiCall.url === "/Event/WriteTelemetryEvents")
         return "authKey, authValue";
     if (apiCall.auth === "EntityToken" && apiCall.name === "ValidateEntityToken")
         return "\"X-EntityToken\", entityToken";
@@ -262,6 +263,13 @@ function getRequestActions(tabbing, apiCall, isInstance) {
     {
         return "\n"+tabbing+"var entityToken = request?.AuthenticationContext?.EntityToken ?? PlayFabSettings.staticPlayer.EntityToken;\n"
                     +tabbing + "if ((entityToken) == null) throw new PlayFabException(PlayFabExceptionCode.EntityTokenNotSet, \"Must call Client Login or GetEntityToken before calling this method\");\n";
+    }
+    else if (apiCall.url === "/Event/WriteTelemetryEvents")
+    {
+        return tabbing + "string authKey = null, authValue = null;\n"
+            + tabbing + "if (requestContext.EntityToken != null) { authKey = \"X-EntityToken\"; authValue = requestContext.EntityToken; }\n"
+            + tabbing + "else if (requestSettings.TelemetryKey != null) { authKey = \"X-TelemetryKey\"; authValue = requestSettings.TelemetryKey; }\n"
+            + tabbing + "else { throw new PlayFabException(PlayFabExceptionCode.EntityTokenNotSet, \"Must call Client Login or GetEntityToken, or set a TelemetryKey in settings before calling this method\"); }\n";
     }
     else if (apiCall.auth === "EntityToken")
     {
